@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tamma | تمّة</title>
+
+  <!-- PWA Meta -->
+  <meta name="theme-color" content="#111111"/>
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f7f5f2;
+      color: #222;
+      text-align: center;
+    }
+    header {
+      padding: 40px 20px;
+    }
+    h1 {
+      font-size: 42px;
+      margin-bottom: 10px;
+    }
+    input, button {
+      padding: 12px;
+      margin: 8px;
+      width: 80%;
+      max-width: 300px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #111;
+      color: white;
+      cursor: pointer;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: white;
+      margin: 10px auto;
+      padding: 10px;
+      width: 80%;
+      max-width: 350px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Tamma</h1>
+  <p>تمّة — جهازك… تمّة</p>
+</header>
+
+<div id="auth">
+  <input type="email" id="email" placeholder="البريد الإلكتروني" />
+  <input type="password" id="password" placeholder="كلمة المرور" />
+  <button onclick="signUp()">تسجيل</button>
+  <button onclick="signIn()">دخول</button>
+</div>
+
+<div id="app" style="display:none;">
+  <h2>أضف صنف جديد</h2>
+  <input type="text" id="item" placeholder="اسم الصنف" />
+  <button onclick="addItem()">إضافة</button>
+
+  <h2>قائمة الجهاز</h2>
+  <ul id="list"></ul>
+</div>
+
+<script>
+  const supabaseUrl = "https://hewymyzkgnsqjbiflewn.supabase.co";
+  const supabaseKey = "DZB1alkP1TwZlfGwOp8XCQ_X1u1AUCD";
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  async function signUp() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    await supabase.auth.signUp({ email, password });
+    alert("تم إنشاء الحساب");
+  }
+
+  async function signIn() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const { data } = await supabase.auth.signInWithPassword({ email, password });
+    if (data.user) {
+      document.getElementById("auth").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      loadItems();
+    }
+  }
+
+  async function addItem() {
+    const item_name = document.getElementById("item").value;
+    const user = (await supabase.auth.getUser()).data.user;
+
+    await supabase.from("items").insert([
+      { item_name, user_id: user.id }
+    ]);
+
+    loadItems();
+  }
+
+  async function loadItems() {
+    const user = (await supabase.auth.getUser()).data.user;
+    const { data } = await supabase
+      .from("items")
+      .select("*")
+      .eq("user_id", user.id);
+
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+    data.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = item.item_name;
+      list.appendChild(li);
+    });
+  }
+</script>
+
+</body>
+</html>
